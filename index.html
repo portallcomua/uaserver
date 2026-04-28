@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UAServer - Лаунчер</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 { font-size: 28px; color: #333; margin-bottom: 5px; }
+        .version { color: #666; font-size: 12px; margin-bottom: 20px; }
+        .pro-badge {
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            color: #333;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+        .free-badge {
+            background: #e0e0e0;
+            color: #666;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+        
+        /* РЕКЛАМНІ БЛОКИ */
+        .ad-block {
+            background: #f9f9f9;
+            border: 2px dashed #ddd;
+            border-radius: 12px;
+            padding: 15px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .ad-title {
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 10px;
+        }
+        .ad-banner {
+            background: linear-gradient(135deg, #ff6b6b, #ff8e53);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-decoration: none;
+            display: block;
+            transition: transform 0.2s;
+        }
+        .ad-banner:hover { transform: scale(1.02); }
+        
+        /* НОВИНИ */
+        .news-block {
+            background: #e3f2fd;
+            border-radius: 12px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .news-title { font-weight: bold; margin-bottom: 10px; color: #1976D2; }
+        .news-item { font-size: 13px; margin: 8px 0; color: #555; }
+        
+        /* СКЛАДАНІ ЗБІРКИ */
+        .builds-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .build-btn {
+            background: #f0f0f0;
+            border: none;
+            padding: 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+        .build-btn:hover { background: #4CAF50; color: white; transform: scale(1.02); }
+        
+        /* ЛІЦЕНЗІЯ */
+        .license-block {
+            background: #FFF8E1;
+            border-radius: 12px;
+            padding: 15px;
+            margin: 15px 0;
+            text-align: center;
+        }
+        .buy-btn {
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        
+        .btn-start {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 15px;
+            font-size: 18px;
+            border-radius: 12px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 20px;
+        }
+        .btn-start:hover { background: #45a049; }
+        .close-btn {
+            float: right;
+            font-size: 28px;
+            cursor: pointer;
+            color: #999;
+        }
+        .close-btn:hover { color: red; }
+        hr { margin: 15px 0; border: none; border-top: 1px solid #eee; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <span class="close-btn" onclick="window.close()">&times;</span>
+    <h1>🚀 UAServer</h1>
+    <div class="version">Локальний сервер для розробників</div>
+    
+    <div id="licenseBadge" class="free-badge">📦 Free версія (3 сайти)</div>
+    
+    <!-- РЕКЛАМНИЙ БЛОК #1 -->
+    <div class="ad-block">
+        <div class="ad-title">📢 Реклама</div>
+        <a href="https://your-advertiser.com" class="ad-banner" target="_blank">
+            🔥 Рекламне місце - Ваш банер тут!<br>
+            <small>Натисніть для переходу</small>
+        </a>
+    </div>
+    
+    <!-- НОВИНИ ПРОЄКТУ -->
+    <div class="news-block">
+        <div class="news-title">📰 Останні новини</div>
+        <div class="news-item">✅ UAServer 2.0 - нова версія з PHP 8.5</div>
+        <div class="news-item">🔜 Скоро: підтримка Node.js</div>
+        <div class="news-item">⭐ PRO версія: необмежені сайти, бекапи, автооновлення</div>
+    </div>
+    
+    <!-- ГОТОВІ ЗБІРКИ -->
+    <div class="news-block">
+        <div class="news-title">📦 Розгорнути готову збірку</div>
+        <div class="builds-grid">
+            <button class="build-btn" onclick="deployCMS('wordpress')">🛒 WordPress</button>
+            <button class="build-btn" onclick="deployCMS('woocommerce')">🛍️ WooCommerce</button>
+            <button class="build-btn" onclick="deployCMS('joomla')">📰 Joomla</button>
+            <button class="build-btn" onclick="deployCMS('drupal')">🏠 Drupal</button>
+            <button class="build-btn" onclick="deployCMS('laravel')">⚡ Laravel</button>
+            <button class="build-btn" onclick="deployCMS('opencart')">🛒 OpenCart</button>
+        </div>
+    </div>
+    
+    <!-- РЕКЛАМНИЙ БЛОК #2 -->
+    <div class="ad-block">
+        <div class="ad-title">📢 Партнери</div>
+        <a href="https://partner-site.com" target="_blank" style="color:#2196F3;">
+            🌐 Розмістіть свою рекламу тут → contact@uaserver.pp.ua
+        </a>
+    </div>
+    
+    <!-- БЛОК ЛІЦЕНЗІЇ ДЛЯ FREE -->
+    <div id="upgradeBlock" class="license-block">
+        <strong>⭐ Отримайте PRO версію</strong><br>
+        <small>✔ Необмежена кількість сайтів</small><br>
+        <small>✔ Автоматичне резервне копіювання</small><br>
+        <small>✔ Автооновлення</small><br>
+        <small>✔ Пріоритетна підтримка</small><br>
+        <button class="buy-btn" onclick="buyPro()">💰 Придбати за $19.99</button>
+    </div>
+    
+    <!-- ПРИХОВАНИЙ БЛОК ДЛЯ PRO (показується через JS) -->
+    <div id="proFeatures" style="display:none;">
+        <div class="news-block" style="background:#E8F5E9;">
+            <div class="news-title" style="color:#2E7D32;">⭐ PRO функції активовані</div>
+            <div class="news-item">✅ Необмежена кількість сайтів</div>
+            <div class="news-item">✅ Бекапи одним кліком</div>
+            <div class="news-item">✅ Автооновлення програми</div>
+        </div>
+    </div>
+    
+    <hr>
+    
+    <!-- КНОПКА ЗАПУСКУ -->
+    <button class="btn-start" onclick="startServer()">▶️ ЗАПУСТИТИ СЕРВЕР</button>
+</div>
+
+<script>
+// Отримуємо параметри з URL
+const urlParams = new URLSearchParams(window.location.search);
+const isPro = urlParams.get('pro') === 'true';
+
+// Оновлюємо інтерфейс залежно від версії
+if (isPro) {
+    document.getElementById('licenseBadge').className = 'pro-badge';
+    document.getElementById('licenseBadge').innerHTML = '⭐ PRO версія (необмежено)';
+    document.getElementById('upgradeBlock').style.display = 'none';
+    document.getElementById('proFeatures').style.display = 'block';
+}
+
+// Функції для взаємодії з програмою
+function startServer() {
+    window.close();
+}
+
+function deployCMS(cmsType) {
+    // Відправляємо команду в програму через COM або через файл-сигнал
+    // Спрощено: відкриваємо локальну сторінку яка викличе функцію
+    window.open('http://localhost/deploy?cms=' + cmsType, '_blank');
+}
+
+function buyPro() {
+    window.open('https://uaserver.pp.ua/pro/checkout', '_blank');
+}
+
+// Відкриття всіх зовнішніх посилань в браузері
+document.querySelectorAll('a[target="_blank"]').forEach(link => {
+    link.addEventListener('click', (e) => {
+        e.preventDefault();
+        window.open(link.href, '_blank');
+    });
+});
+</script>
+</body>
+</html>
