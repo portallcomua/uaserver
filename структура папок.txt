@@ -1,0 +1,21 @@
+D:\UaServer\
+│
+├── UAServer.exe          (скомпільований)
+├── license.key           (файл ліцензії для PRO)
+├── logo.ico
+│
+├── bin\                  (PHP, nginx, MySQL)
+│   ├── php74\
+│   ├── php85\
+│   ├── nginx\
+│   └── mysql\
+│
+├── www\                  (САЙТИ КОРИСТУВАЧІВ)
+│   ├── site1\
+│   ├── site2\
+│   └── site3\            (макс 3 для Free)
+│
+├── start\                (локальний fallback для start сторінки)
+│   └── index.html
+│
+└── backups\              (автоматичні бекапи - тільки PRO)
