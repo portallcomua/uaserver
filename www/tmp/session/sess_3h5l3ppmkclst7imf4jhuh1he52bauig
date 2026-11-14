@@ -1,0 +1,4 @@
+ PMA_token |s:32:"2b6f605a57512423362473756c735874"; HMAC_secret |s:16:"9L2K8'!xV%``_}{n";browser_access_time|a:1:{s:7:"default";i:1781930145;}Import_message|a:1:{s:7:"message";s:470:"<div class="alert alert-danger" role="alert"><h1>Помилка</h1><p>
+    <strong>Відповідь MySQL: </strong><a href="./url.php?url=https%3A%2F%2Fdev.mysql.com%2Fdoc%2Frefman%2F5.7%2Fen%2Fserver-error-reference.html" target="mysql_doc"><img src="themes/dot.gif" title="Документація" alt="Документація" class="icon ic_b_help"></a>
+</p>
+<code>З'єднання неможливе: невірні налаштування.</code><br></div>";}errors|a:0:{}
