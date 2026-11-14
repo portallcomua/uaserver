@@ -10,12 +10,15 @@ Persistent
 ; ============================================================
 
 global AppName    := "UAServer"
+global AppVersion := "7.2"
 global BaseDir    := A_ScriptDir
 global CurPHP     := "8.5"
 global CurPort    := 80
 global PhpPort    := 9000
+global ReleaseApiUrl := "https://api.github.com/repos/portallcomua/uaserver/releases/latest"
+global ReleasePageUrl := "https://github.com/portallcomua/uaserver/releases/latest"
 
-; Базові директорії
+; Базові директорії — усі шляхи прив'язані до папки програми.
 global NginxDir   := BaseDir . "\bin\nginx"
 global PhpDir     := BaseDir . "\bin\php85"
 global MysqlDir   := BaseDir . "\bin\mysql"
@@ -24,6 +27,7 @@ global TmpDir     := BaseDir . "\tmp"
 global LogsDir    := BaseDir . "\logs"
 
 CreateDirs() {
+    global TmpDir, LogsDir, WwwDir, NginxDir
     dirs := [
         TmpDir,
         TmpDir . "\session",
@@ -34,6 +38,90 @@ CreateDirs() {
     for dir in dirs {
         if !DirExist(dir)
             DirCreate(dir)
+    }
+}
+
+; Створює/оновлює ярлик на поточне розташування програми.
+; Якщо папку перенесли, повторний запуск EXE оновить шлях ярлика.
+CreateDesktopShortcut() {
+    global AppName, BaseDir
+    shortcutPath := A_Desktop . "\" . AppName . ".lnk"
+    iconPath := FileExist(BaseDir . "\files\logo.ico")
+        ? BaseDir . "\files\logo.ico"
+        : (FileExist(BaseDir . "\logo.ico") ? BaseDir . "\logo.ico" : "")
+
+    try {
+        if A_IsCompiled {
+            targetPath := A_ScriptFullPath
+            targetArgs := ""
+            if iconPath = ""
+                iconPath := A_ScriptFullPath
+        } else {
+            targetPath := A_AhkPath
+            targetArgs := '"' . A_ScriptFullPath . '"'
+            if iconPath = ""
+                iconPath := A_AhkPath
+        }
+
+        if FileExist(shortcutPath)
+            FileDelete(shortcutPath)
+        FileCreateShortcut(targetPath, shortcutPath, BaseDir, targetArgs,
+            "Запуск " . AppName, iconPath)
+    } catch as err {
+        ; Створення ярлика не повинно заважати запуску сервера.
+        OutputDebug("Не вдалося створити ярлик UAServer: " . err.Message)
+    }
+}
+
+; Відкриває локальну сторінку з комплекту — вона працює і без інтернету.
+; Порядок пошуку: files\index.html, потім index.html у корені.
+OpenLauncher() {
+    global BaseDir, CurPort
+    launcherPath := BaseDir . "\files\index.html"
+    if !FileExist(launcherPath)
+        launcherPath := BaseDir . "\index.html"
+
+    if FileExist(launcherPath) {
+        try Run('"' . launcherPath . '"')
+        catch as err
+            OutputDebug("Не вдалося відкрити локальну сторінку: " . err.Message)
+    } else {
+        portSuffix := (CurPort = 80) ? "" : ":" . CurPort
+        Run("http://localhost" . portSuffix . "/")
+    }
+}
+
+; Перевіряє GitHub Releases. Оновлення лише повідомляється користувачу;
+; файли не перезаписуються автоматично, щоб не пошкодити його сайти/бази даних.
+CheckForUpdates() {
+    global AppName, AppVersion, ReleaseApiUrl, ReleasePageUrl
+    try {
+        request := ComObject("WinHttp.WinHttpRequest.5.1")
+        request.SetTimeouts(1000, 1000, 2000, 2000)
+        request.Open("GET", ReleaseApiUrl, false)
+        request.SetRequestHeader("User-Agent", "UAServer-Updater")
+        request.SetRequestHeader("Accept", "application/vnd.github+json")
+        request.Send()
+
+        if request.Status != 200
+            return
+
+        responseText := request.ResponseText
+        if RegExMatch(responseText, '"tag_name"\s*:\s*"([^\"]+)"', &match) {
+            latestVersion := match[1]
+            currentNormalized := StrLower(RegExReplace(AppVersion, "i)^v", ""))
+            latestNormalized := StrLower(RegExReplace(latestVersion, "i)^v", ""))
+            if latestNormalized != currentNormalized {
+                answer := MsgBox("Доступна нова версія UAServer: " . latestVersion
+                    . "`nВстановлена версія: " . AppVersion
+                    . "`n`nВідкрити сторінку завантаження оновлення?`nОновлення поки потрібно встановити вручну.",
+                    AppName, "YesNo Iconi")
+                if answer = "Yes"
+                    Run(ReleasePageUrl)
+            }
+        }
+    } catch {
+        ; Немає інтернету або GitHub недоступний — продовжуємо офлайн.
     }
 }
 
@@ -51,7 +139,7 @@ StartServer() {
     fixedLogs  := StrReplace(LogsDir, "\", "/")
     fixedMysql := StrReplace(MysqlDir, "\", "/")
 
-    ; Генерируємо блоки підпапок
+    ; Генеруємо блоки підпапок
     sitesList := GetSiteList()
     dynamicLocations := ""
     
@@ -181,8 +269,9 @@ StartServer() {
         Run(A_ComSpec ' /c start "" /b nginx.exe', NginxDir, "Hide")
         SetWorkingDir(BaseDir)
         
-        if FileExist(BaseDir . "\logo.ico")
-            TraySetIcon(BaseDir . "\logo.ico")
+        iconPath := FileExist(BaseDir . "\files\logo.ico") ? BaseDir . "\files\logo.ico" : BaseDir . "\logo.ico"
+        if FileExist(iconPath)
+            TraySetIcon(iconPath)
         A_IconHidden := false
         UpdateMenu()
         
@@ -235,8 +324,8 @@ UpdateMenu() {
     Tray.Add("🔄 Перезапустити сервер", (*) => (StopServer(), StartServer()))
     Tray.Add("⏹️ Зупинити сервер", StopServer)
     Tray.Add()
-    Tray.Add("📂 Відкрити www", (*) => Run("explorer.exe `"" WwwDir "`""))
-    Tray.Add("📂 Відкрити logs", (*) => Run("explorer.exe `"" BaseDir "\logs`""))
+    Tray.Add("📂 Відкрити www", (*) => Run('explorer.exe "' WwwDir '"'))
+    Tray.Add("📂 Відкрити logs", (*) => Run('explorer.exe "' BaseDir '\logs"'))
     Tray.Add()
     Tray.Add("❌ Вийти", (*) => (StopServer(), ExitApp()))
 }
@@ -264,5 +353,8 @@ SetPHP(ver) {
         StartServer()
 }
 
-; СТАРТ
+; Старт: сервер запускається з поточної папки, без прив'язки до її назви/диска.
+CreateDesktopShortcut()
 StartServer()
+OpenLauncher()
+SetTimer(CheckForUpdates, -1500)
