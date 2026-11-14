@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UAServer - Лаунчер</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .ad-space {
+            background: #f5f5f5;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            border: 2px dashed #ccc;
+        }
+        .ad-banner {
+            background: #ff9800;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-decoration: none;
+            display: inline-block;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .btn-start {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 20px;
+            width: 100%;
+            transition: transform 0.2s;
+        }
+        .btn-start:hover {
+            transform: scale(1.02);
+            background: #45a049;
+        }
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            font-size: 30px;
+            cursor: pointer;
+            color: #999;
+        }
+        .close-btn:hover {
+            color: #ff0000;
+        }
+        .social-links {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #999;
+        }
+        .social-links a {
+            color: #667eea;
+            text-decoration: none;
+            margin: 0 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="close-btn" onclick="closeWindow()">&times;</div>
+        <h1>🚀 UAServer</h1>
+        <div class="subtitle">Локальний сервер для розробників</div>
+        
+        <!-- МІСЦЕ ДЛЯ РЕКЛАМИ -->
+        <div class="ad-space">
+            <a href="https://your-advertiser-site.com" class="ad-banner" data-url="external">
+                📢 Рекламне місце - Натисніть для переходу
+            </a>
+            <p style="font-size: 12px; margin-top: 10px;">Підтримайте проєкт - перейдіть за рекламою</p>
+        </div>
+        
+        <!-- НОВИНИ / ОНОВЛЕННЯ -->
+        <div style="background: #e3f2fd; border-radius: 10px; padding: 15px; margin: 15px 0;">
+            <strong>📢 Новини:</strong>
+            <p style="margin: 5px 0;">✅ Вийшла версія 2.0 з підтримкою PHP 8.5</p>
+            <p style="margin: 5px 0;">🔜 Планується підтримка Node.js</p>
+        </div>
+        
+        <!-- КНОПКА ЗАПУСКУ -->
+        <button class="btn-start" id="launchServerBtn">▶️ ЗАПУСТИТИ СЕРВЕР</button>
+        
+        <div class="social-links">
+            Слідкуйте за нами: 
+            <a href="https://t.me/uaserver">Telegram</a> |
+            <a href="https://github.com/uaserver">GitHub</a>
+        </div>
+    </div>
+    
+    <script>
+        // Функція закриття вікна
+        function closeWindow() {
+            window.close();
+        }
+        
+        // Відкриття зовнішніх посилань у браузері
+        document.addEventListener('click', function(e) {
+            let link = e.target.closest('a');
+            if (link && link.href && link.getAttribute('data-url') === 'external') {
+                e.preventDefault();
+                window.open(link.href, '_blank');
+                return false;
+            }
+        });
+        
+        // Кнопка запуску сервера
+        var launchBtn = document.getElementById('launchServerBtn');
+        if (launchBtn) {
+            launchBtn.onclick = function() {
+                closeWindow();
+            };
+        }
+        
+        // Всі зовнішні посилання за замовчуванням - в браузер
+        document.querySelectorAll('a[target="_blank"], a[href^="http"]').forEach(function(link) {
+            link.addEventListener('click', function(e) {
+                if (!link.getAttribute('data-url')) {
+                    e.preventDefault();
+                    window.open(link.href, '_blank');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
