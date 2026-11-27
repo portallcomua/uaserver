@@ -132,8 +132,8 @@ jobs:
       - name: Publish test release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v8.5.1-portable-test-20261127
-          name: UAServer Free 8.5.1 — portable test
+          tag_name: v8.5.1-portable-test-20261127-b
+          name: UAServer Free 8.5.1 — portable test build B
           target_commitish: main
           make_latest: true
           generate_release_notes: true
