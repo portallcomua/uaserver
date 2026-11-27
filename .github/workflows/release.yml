@@ -54,7 +54,7 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           $tmp = Join-Path $env:RUNNER_TEMP 'downloads'
-          Invoke-WebRequest 'https://archive.mariadb.org/mariadb-12.1.2/winx64-packages/mariadb-12.1.2-winx64.zip' -OutFile "$tmp\mariadb.zip"
+          Invoke-WebRequest 'https://dlm.mariadb.com/MariaDB/mariadb-12.1.2/winx64-packages/mariadb-12.1.2-winx64.zip' -OutFile "$tmp\mariadb.zip"
           $extract = Join-Path $tmp 'mariadb'
           Expand-Archive "$tmp\mariadb.zip" $extract -Force
           $root = Get-ChildItem $extract -Directory | Select-Object -First 1
@@ -132,8 +132,8 @@ jobs:
       - name: Publish test release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v8.5.1-portable-test-20261127-c
-          name: UAServer Free 8.5.1 — portable test build C
+          tag_name: v8.5.1-portable-test-20261127-d
+          name: UAServer Free 8.5.1 — portable test build D
           target_commitish: main
           make_latest: true
           generate_release_notes: true
