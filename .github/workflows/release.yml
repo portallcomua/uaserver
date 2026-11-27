@@ -1,0 +1,142 @@
+name: Build UAServer packages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'UAServer.ahk'
+      - 'app/**'
+      - 'start/**'
+      - 'installer/**'
+      - 'logo.ico'
+      - '.github/workflows/release.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - name: Get source
+        uses: actions/checkout@v4
+
+      - name: Prepare staging folders
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $stage = Join-Path $env:RUNNER_TEMP 'UAServer-Staging'
+          $out = Join-Path $env:RUNNER_TEMP 'UAServer-Output'
+          New-Item -ItemType Directory -Force -Path $stage, $out | Out-Null
+          "STAGE=$stage" >> $env:GITHUB_ENV
+          "OUT=$out" >> $env:GITHUB_ENV
+          New-Item -ItemType Directory -Force -Path "$stage\bin\php85", "$stage\bin\php74", "$stage\bin\mysql", "$stage\bin\nginx", "$stage\bin\phpmyadmin", "$stage\www", "$stage\tmp\session", "$stage\logs" | Out-Null
+
+      - name: Download official PHP packages
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $tmp = Join-Path $env:RUNNER_TEMP 'downloads'
+          New-Item -ItemType Directory -Force -Path $tmp | Out-Null
+          Invoke-WebRequest 'https://windows.php.net/downloads/releases/archives/php-8.5.1-nts-Win32-vs17-x64.zip' -OutFile "$tmp\php85.zip"
+          Invoke-WebRequest 'https://windows.php.net/downloads/releases/archives/php-7.4.33-nts-Win32-vc15-x64.zip' -OutFile "$tmp\php74.zip"
+          Expand-Archive "$tmp\php85.zip" "$env:STAGE\bin\php85" -Force
+          Expand-Archive "$tmp\php74.zip" "$env:STAGE\bin\php74" -Force
+          if (!(Test-Path "$env:STAGE\bin\php85\php-cgi.exe")) { throw 'PHP 8.5 package is incomplete.' }
+          if (!(Test-Path "$env:STAGE\bin\php74\php-cgi.exe")) { throw 'PHP 7.4 package is incomplete.' }
+          & "$env:STAGE\bin\php85\php.exe" -v
+          & "$env:STAGE\bin\php74\php.exe" -v
+
+      - name: Download and initialize official MariaDB ZIP
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $tmp = Join-Path $env:RUNNER_TEMP 'downloads'
+          Invoke-WebRequest 'https://archive.mariadb.org/mariadb-12.1.2/winx64-packages/mariadb-12.1.2-winx64.zip' -OutFile "$tmp\mariadb.zip"
+          $extract = Join-Path $tmp 'mariadb'
+          Expand-Archive "$tmp\mariadb.zip" $extract -Force
+          $root = Get-ChildItem $extract -Directory | Select-Object -First 1
+          if (!$root) { throw 'MariaDB archive structure was not recognized.' }
+          Copy-Item "$($root.FullName)\*" "$env:STAGE\bin\mysql" -Recurse -Force
+          if (!(Test-Path "$env:STAGE\bin\mysql\bin\mysqld.exe")) { throw 'MariaDB server executable is missing.' }
+          Push-Location "$env:STAGE\bin\mysql"
+          try {
+            & ".\bin\mariadb-install-db.exe"
+            if ($LASTEXITCODE -ne 0) { throw 'MariaDB initial data directory creation failed.' }
+          } finally {
+            Pop-Location
+          }
+          if (!(Test-Path "$env:STAGE\bin\mysql\data\mysql")) { throw 'MariaDB system tables were not initialized.' }
+
+      - name: Download official Nginx and phpMyAdmin
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $tmp = Join-Path $env:RUNNER_TEMP 'downloads'
+          Invoke-WebRequest 'https://nginx.org/download/nginx-1.30.8.zip' -OutFile "$tmp\nginx.zip"
+          $nginxExtract = Join-Path $tmp 'nginx'
+          Expand-Archive "$tmp\nginx.zip" $nginxExtract -Force
+          $nginxRoot = Get-ChildItem $nginxExtract -Directory | Select-Object -First 1
+          if (!$nginxRoot) { throw 'Nginx archive structure was not recognized.' }
+          Copy-Item "$($nginxRoot.FullName)\*" "$env:STAGE\bin\nginx" -Recurse -Force
+          if (!(Test-Path "$env:STAGE\bin\nginx\nginx.exe")) { throw 'Nginx executable is missing.' }
+
+          Invoke-WebRequest 'https://files.phpmyadmin.net/phpMyAdmin/5.2.3/phpMyAdmin-5.2.3-all-languages.zip' -OutFile "$tmp\phpmyadmin.zip"
+          $pmaExtract = Join-Path $tmp 'phpmyadmin'
+          Expand-Archive "$tmp\phpmyadmin.zip" $pmaExtract -Force
+          $pmaRoot = Get-ChildItem $pmaExtract -Directory | Select-Object -First 1
+          if (!$pmaRoot) { throw 'phpMyAdmin archive structure was not recognized.' }
+          Copy-Item "$($pmaRoot.FullName)\*" "$env:STAGE\bin\phpmyadmin" -Recurse -Force
+          if (!(Test-Path "$env:STAGE\bin\phpmyadmin\index.php")) { throw 'phpMyAdmin files are missing.' }
+
+      - name: Install AutoHotkey v2 and compile both EXE files
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $setup = Join-Path $env:RUNNER_TEMP 'AutoHotkey-v2-setup.exe'
+          Invoke-WebRequest 'https://www.autohotkey.com/download/2.0/AutoHotkey_2.0.19_setup.exe' -OutFile $setup
+          Start-Process -FilePath $setup -ArgumentList '/S' -Wait
+          $ahkRoot = Join-Path $env:ProgramFiles 'AutoHotkey'
+          $compiler = Get-ChildItem $ahkRoot -Filter 'Ahk2Exe.exe' -Recurse | Select-Object -First 1
+          $base = Get-ChildItem $ahkRoot -Filter 'AutoHotkey64.exe' -Recurse | Select-Object -First 1
+          if (!$compiler -or !$base) { throw 'AutoHotkey v2 compiler/runtime was not found.' }
+
+          Copy-Item 'UAServer.ahk' "$env:STAGE\UAServer.ahk"
+          Copy-Item 'logo.ico' "$env:STAGE\logo.ico"
+          Copy-Item 'app' "$env:STAGE\app" -Recurse -Force
+          Copy-Item 'start' "$env:STAGE\start" -Recurse -Force
+
+          & $compiler.FullName /in "$env:GITHUB_WORKSPACE\UAServer.ahk" /out "$env:STAGE\UAServer.exe" /icon "$env:GITHUB_WORKSPACE\logo.ico" /base $base.FullName
+          if ($LASTEXITCODE -ne 0 -or !(Test-Path "$env:STAGE\UAServer.exe")) { throw 'UAServer.exe compilation failed.' }
+
+          & $compiler.FullName /in "$env:GITHUB_WORKSPACE\installer\UAServer-Online.ahk" /out "$env:OUT\UAServer-Online.exe" /icon "$env:GITHUB_WORKSPACE\logo.ico" /base $base.FullName
+          if ($LASTEXITCODE -ne 0 -or !(Test-Path "$env:OUT\UAServer-Online.exe")) { throw 'Online installer compilation failed.' }
+
+      - name: Package clean portable archives
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          @'
+          UAServer Free 8.5.1
+          Portable local web server.
+          Start UAServer.exe. Put websites in the www folder.
+          MariaDB system tables are initialized and the database directory is empty.
+          PHP 8.5 and PHP 7.4, MariaDB, Nginx and phpMyAdmin are included.
+          '@ | Set-Content "$env:STAGE\README.txt" -Encoding UTF8
+          Compress-Archive -Path "$env:STAGE\*" -DestinationPath "$env:OUT\UAServer-Full.zip" -CompressionLevel Optimal
+          Compress-Archive -Path "$env:OUT\UAServer-Online.exe" -DestinationPath "$env:OUT\UAServer-Online.zip" -CompressionLevel Optimal
+          Get-Item "$env:OUT\UAServer-Full.zip", "$env:OUT\UAServer-Online.zip" | Select-Object Name, Length
+
+      - name: Publish test release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v8.5.1-portable-test-20261127
+          name: UAServer Free 8.5.1 — portable test
+          target_commitish: main
+          make_latest: true
+          generate_release_notes: true
+          files: |
+            ${{ env.OUT }}/UAServer-Full.zip
+            ${{ env.OUT }}/UAServer-Online.zip
