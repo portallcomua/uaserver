@@ -91,17 +91,21 @@ jobs:
           Copy-Item "$($pmaRoot.FullName)\*" "$env:STAGE\bin\phpmyadmin" -Recurse -Force
           if (!(Test-Path "$env:STAGE\bin\phpmyadmin\index.php")) { throw 'phpMyAdmin files are missing.' }
 
-      - name: Install AutoHotkey v2 and compile both EXE files
+      - name: Download AutoHotkey and compile both EXE files
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $setup = Join-Path $env:RUNNER_TEMP 'AutoHotkey-v2-setup.exe'
-          Invoke-WebRequest 'https://www.autohotkey.com/download/2.0/AutoHotkey_2.0.19_setup.exe' -OutFile $setup
-          Start-Process -FilePath $setup -ArgumentList '/S' -Wait
-          $ahkRoot = Join-Path $env:ProgramFiles 'AutoHotkey'
-          $compiler = Get-ChildItem $ahkRoot -Filter 'Ahk2Exe.exe' -Recurse | Select-Object -First 1
+          $ahkZip = Join-Path $env:RUNNER_TEMP 'AutoHotkey-v2.zip'
+          $ahkRoot = Join-Path $env:RUNNER_TEMP 'AutoHotkey-v2'
+          $compilerZip = Join-Path $env:RUNNER_TEMP 'Ahk2Exe.zip'
+          $compilerRoot = Join-Path $env:RUNNER_TEMP 'Ahk2Exe'
+          Invoke-WebRequest 'https://github.com/AutoHotkey/AutoHotkey/releases/download/v2.0.19/AutoHotkey_2.0.19.zip' -OutFile $ahkZip
+          Expand-Archive $ahkZip $ahkRoot -Force
+          Invoke-WebRequest 'https://github.com/AutoHotkey/Ahk2Exe/releases/download/Ahk2Exe1.1.37.02a2/Ahk2Exe1.1.37.02a2.zip' -OutFile $compilerZip
+          Expand-Archive $compilerZip $compilerRoot -Force
+          $compiler = Get-ChildItem $compilerRoot -Filter 'Ahk2Exe.exe' -Recurse | Select-Object -First 1
           $base = Get-ChildItem $ahkRoot -Filter 'AutoHotkey64.exe' -Recurse | Select-Object -First 1
-          if (!$compiler -or !$base) { throw 'AutoHotkey v2 compiler/runtime was not found.' }
+          if (!$compiler -or !$base) { throw 'AutoHotkey compiler or v2 base runtime was not found in the official GitHub packages.' }
 
           Copy-Item 'UAServer.ahk' "$env:STAGE\UAServer.ahk"
           Copy-Item 'logo.ico' "$env:STAGE\logo.ico"
@@ -132,8 +136,8 @@ jobs:
       - name: Publish test release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v8.5.1-portable-test-20261127-d
-          name: UAServer Free 8.5.1 — portable test build D
+          tag_name: v8.5.1-portable-test-20261127-e
+          name: UAServer Free 8.5.1 — portable test build E
           target_commitish: main
           make_latest: true
           generate_release_notes: true
