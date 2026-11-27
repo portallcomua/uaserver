@@ -1,0 +1,14 @@
+# Generated/runtime components — downloaded by the release workflow
+/bin/
+
+# Local sites, databases and runtime state
+/www/
+/logs/
+/tmp/
+/settings.ini
+
+# Runtime files
+*.log
+*.pid
+*.err
+*.tmp
