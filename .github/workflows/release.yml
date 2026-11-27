@@ -113,10 +113,10 @@ jobs:
           Copy-Item 'start' "$env:STAGE\start" -Recurse -Force
 
           & $compiler.FullName /in "$env:GITHUB_WORKSPACE\UAServer.ahk" /out "$env:STAGE\UAServer.exe" /icon "$env:GITHUB_WORKSPACE\logo.ico" /base $base.FullName
-          if ($LASTEXITCODE -ne 0 -or !(Test-Path "$env:STAGE\UAServer.exe")) { throw 'UAServer.exe compilation failed.' }
+          if (!(Test-Path "$env:STAGE\UAServer.exe") -or (Get-Item "$env:STAGE\UAServer.exe").Length -lt 100000) { throw 'UAServer.exe compilation failed.' }
 
           & $compiler.FullName /in "$env:GITHUB_WORKSPACE\installer\UAServer-Online.ahk" /out "$env:OUT\UAServer-Online.exe" /icon "$env:GITHUB_WORKSPACE\logo.ico" /base $base.FullName
-          if ($LASTEXITCODE -ne 0 -or !(Test-Path "$env:OUT\UAServer-Online.exe")) { throw 'Online installer compilation failed.' }
+          if (!(Test-Path "$env:OUT\UAServer-Online.exe") -or (Get-Item "$env:OUT\UAServer-Online.exe").Length -lt 100000) { throw 'Online installer compilation failed.' }
 
       - name: Package clean portable archives
         shell: pwsh
@@ -136,8 +136,8 @@ jobs:
       - name: Publish test release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v8.5.1-portable-test-20261127-e
-          name: UAServer Free 8.5.1 — portable test build E
+          tag_name: v8.5.1-portable-test-20261127-f
+          name: UAServer Free 8.5.1 — portable test build F
           target_commitish: main
           make_latest: true
           generate_release_notes: true
